@@ -3,7 +3,7 @@ import { motion, HTMLMotionProps } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'ref' | 'children'> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'outline'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'whatsapp'
   size?: 'sm' | 'md' | 'lg'
   icon?: ReactNode
   iconPosition?: 'left' | 'right'
@@ -37,6 +37,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         'text-white hover:bg-white/10 active:scale-[0.98]',
       outline:
         'border border-primary-400/50 text-primary-400 hover:bg-primary-400/10 hover:border-primary-400 active:scale-[0.98]',
+      whatsapp:
+        'bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] hover:scale-[1.02] active:scale-[0.98]',
     }
 
     const sizes = {

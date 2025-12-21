@@ -23,10 +23,15 @@ const GuaranteeIcons = {
   ),
   accesibilidad: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      {/* Head */}
       <circle cx="12" cy="4" r="2"/>
+      {/* Body - torso */}
       <path d="M12 6v8"/>
-      <path d="M8 10l4 2 4-2"/>
-      <path d="M8 20l4-4 4 4"/>
+      {/* Arms */}
+      <path d="M7 9l5 2 5-2"/>
+      {/* Legs */}
+      <path d="M12 14l-4 7"/>
+      <path d="M12 14l4 7"/>
     </svg>
   ),
 }

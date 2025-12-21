@@ -3,44 +3,85 @@ export interface LeadFormData {
   contacto: string
   tipoProyecto: 'web' | 'sistema' | 'otro'
   mensaje: string
-  honeypot?: string // Anti-spam field
+  // Qualification fields
+  timeframe: string
+  budgetRange: string
+  referenceUrl: string
+  hasDomainHosting: boolean | null
+  // Anti-spam
+  honeypot?: string
+  company?: string // Additional honeypot
+}
+
+export interface LeadApiResponse {
+  success: boolean
+  lead_token: string
+  thank_you_url: string
+  calendly_url: string
+  whatsapp_url: string
 }
 
 export interface SubmitResult {
   success: boolean
   message: string
+  data?: LeadApiResponse
 }
 
 export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
-  // Anti-spam check
-  if (data.honeypot) {
-    // Bot detected, pretend success
-    return { success: true, message: 'Gracias por tu mensaje.' }
+  // Anti-spam check - honeypot fields
+  if (data.honeypot || data.company) {
+    // Bot detected, pretend success but don't actually process
+    return { 
+      success: true, 
+      message: 'Gracias por tu mensaje.',
+      data: {
+        success: true,
+        lead_token: '',
+        thank_you_url: '/',
+        calendly_url: '/',
+        whatsapp_url: getWhatsAppUrl(data),
+      }
+    }
   }
 
   const apiUrl = import.meta.env.VITE_API_URL
 
   try {
     if (apiUrl) {
-      // Mode A: Backend propio (Django futuro)
+      // Mode A: Backend propio (Django)
       const response = await fetch(`${apiUrl}/api/leads/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          nombre: data.nombre,
-          contacto: data.contacto,
-          tipo_proyecto: data.tipoProyecto,
-          mensaje: data.mensaje,
+          name: data.nombre,
+          contact: data.contacto,
+          project_type: data.tipoProyecto,
+          message: data.mensaje,
+          timeframe: data.timeframe,
+          budget_range: data.budgetRange,
+          reference_url: data.referenceUrl,
+          has_domain_hosting: data.hasDomainHosting,
+          honeypot: data.honeypot,
+          company: data.company,
         }),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        throw new Error('Error al enviar el formulario')
+        return { 
+          success: false, 
+          message: result.error || 'Error al enviar el formulario' 
+        }
       }
 
-      return { success: true, message: '¡Mensaje enviado! Te contactaremos pronto.' }
+      return { 
+        success: true, 
+        message: '¡Mensaje enviado!',
+        data: result as LeadApiResponse,
+      }
     }
 
     // Mode B: Fallback - Formspree
@@ -58,6 +99,10 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
           contacto: data.contacto,
           tipoProyecto: data.tipoProyecto,
           mensaje: data.mensaje,
+          timeframe: data.timeframe,
+          budgetRange: data.budgetRange,
+          referenceUrl: data.referenceUrl,
+          hasDomainHosting: data.hasDomainHosting,
         }),
       })
 
@@ -65,7 +110,10 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
         throw new Error('Error al enviar el formulario')
       }
 
-      return { success: true, message: '¡Mensaje enviado! Te contactaremos pronto.' }
+      return { 
+        success: true, 
+        message: '¡Mensaje enviado! Te contactaremos pronto.' 
+      }
     }
 
     // No backend configured - return instructions
@@ -80,6 +128,36 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
       message: 'Hubo un error. Intentá de nuevo o contactanos por WhatsApp.' 
     }
   }
+}
+
+/**
+ * Submit lead and redirect to the specified destination
+ */
+export async function submitAndRedirect(
+  data: LeadFormData, 
+  redirectType: 'thank_you' | 'whatsapp'
+): Promise<SubmitResult> {
+  const result = await submitLead(data)
+  
+  if (result.success && result.data) {
+    const targetUrl = redirectType === 'whatsapp' 
+      ? result.data.whatsapp_url 
+      : result.data.thank_you_url
+
+    // For thank-you page, navigate in same window
+    // For WhatsApp, open in new tab then stay on page
+    if (redirectType === 'whatsapp') {
+      window.open(targetUrl, '_blank')
+    } else {
+      // Redirect to thank-you page (could be backend URL or Calendly directly)
+      const apiUrl = import.meta.env.VITE_API_URL
+      if (apiUrl && result.data.thank_you_url) {
+        window.location.href = `${apiUrl}${result.data.thank_you_url}`
+      }
+    }
+  }
+  
+  return result
 }
 
 export function getWhatsAppUrl(data?: Partial<LeadFormData>): string {

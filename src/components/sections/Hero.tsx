@@ -94,20 +94,20 @@ export function Hero() {
         >
           <Button
             size="lg"
-            icon={<WhatsAppIcon />}
-            onClick={() => window.open(getWhatsAppUrl(), '_blank')}
-            aria-label="Contactar por WhatsApp"
-          >
-            WhatsApp
-          </Button>
-          <Button
-            variant="secondary"
-            size="lg"
             icon={<CalendarIcon />}
             onClick={() => scrollTo('contacto')}
             aria-label="Agendar una reunión"
           >
             Agendar reunión
+          </Button>
+          <Button
+            variant="whatsapp"
+            size="lg"
+            icon={<WhatsAppIcon />}
+            onClick={() => window.open(getWhatsAppUrl(), '_blank')}
+            aria-label="Contactar por WhatsApp"
+          >
+            WhatsApp
           </Button>
         </motion.div>
       </motion.div>
