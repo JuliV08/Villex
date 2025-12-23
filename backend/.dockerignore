@@ -1,0 +1,61 @@
+# =====================================================
+# Docker Ignore - Backend
+# =====================================================
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.prod
+
+# Logs
+*.log
+
+# Database
+*.sqlite3
+
+# Static files (se generan en build)
+staticfiles/
+
+# Tests
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Git
+.git/
+.gitignore

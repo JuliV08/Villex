@@ -1,0 +1,111 @@
+# =====================================================
+# Docker Compose Production - Villex
+# =====================================================
+# Uso: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+
+services:
+  # =================================================
+  # Base de datos PostgreSQL
+  # =================================================
+  db:
+    image: postgres:15-alpine
+    container_name: villex_db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-villex_leads}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-villex_leads}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - villex_network
+
+  # =================================================
+  # Backend Django + Gunicorn
+  # =================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: villex_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-villex_leads}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - DEBUG=${DEBUG:-False}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost}
+      - CALENDLY_BASE_URL=${CALENDLY_BASE_URL:-https://calendly.com}
+      - WHATSAPP_PHONE=${WHATSAPP_PHONE:-}
+      - WHATSAPP_TEMPLATE=${WHATSAPP_TEMPLATE:-}
+      - IP_HASH_SECRET=${IP_HASH_SECRET:-change-me}
+    networks:
+      - villex_network
+    expose:
+      - "8000"
+
+  # =================================================
+  # Frontend Build (genera archivos estáticos)
+  # =================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-/api}
+    container_name: villex_frontend_build
+    volumes:
+      - frontend_build:/usr/share/nginx/html
+    # Este contenedor solo existe para el build
+    # Nginx copiará los archivos del volumen
+    command: ["echo", "Build completed"]
+
+  # =================================================
+  # Nginx Reverse Proxy
+  # =================================================
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: villex_nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      # - "443:443"  # Descomentar para HTTPS
+    volumes:
+      - frontend_build:/usr/share/nginx/html:ro
+      # - /etc/letsencrypt:/etc/letsencrypt:ro  # Para SSL
+    networks:
+      - villex_network
+
+# =================================================
+# Volumes persistentes
+# =================================================
+volumes:
+  postgres_data:
+    name: villex_postgres_data
+  frontend_build:
+    name: villex_frontend_build
+
+# =================================================
+# Network
+# =================================================
+networks:
+  villex_network:
+    name: villex_network
+    driver: bridge
