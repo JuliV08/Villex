@@ -31,8 +31,8 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
   // Anti-spam check - honeypot fields
   if (data.honeypot || data.company) {
     // Bot detected, pretend success but don't actually process
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: 'Gracias por tu mensaje.',
       data: {
         success: true,
@@ -49,7 +49,7 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
   try {
     if (apiUrl) {
       // Mode A: Backend propio (Django)
-      const response = await fetch(`${apiUrl}/api/leads/`, {
+      const response = await fetch(`${apiUrl}/leads/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,14 +71,14 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
       const result = await response.json()
 
       if (!response.ok) {
-        return { 
-          success: false, 
-          message: result.error || 'Error al enviar el formulario' 
+        return {
+          success: false,
+          message: result.error || 'Error al enviar el formulario'
         }
       }
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         message: '¡Mensaje enviado!',
         data: result as LeadApiResponse,
       }
@@ -86,7 +86,7 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
 
     // Mode B: Fallback - Formspree
     const formspreeUrl = import.meta.env.VITE_FORMSPREE_URL
-    
+
     if (formspreeUrl) {
       const response = await fetch(formspreeUrl, {
         method: 'POST',
@@ -110,22 +110,22 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
         throw new Error('Error al enviar el formulario')
       }
 
-      return { 
-        success: true, 
-        message: '¡Mensaje enviado! Te contactaremos pronto.' 
+      return {
+        success: true,
+        message: '¡Mensaje enviado! Te contactaremos pronto.'
       }
     }
 
     // No backend configured - return instructions
-    return { 
-      success: false, 
-      message: 'Por favor, usá el botón de WhatsApp para contactarnos.' 
+    return {
+      success: false,
+      message: 'Por favor, usá el botón de WhatsApp para contactarnos.'
     }
   } catch (error) {
     console.error('Submit error:', error)
-    return { 
-      success: false, 
-      message: 'Hubo un error. Intentá de nuevo o contactanos por WhatsApp.' 
+    return {
+      success: false,
+      message: 'Hubo un error. Intentá de nuevo o contactanos por WhatsApp.'
     }
   }
 }
@@ -134,14 +134,14 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
  * Submit lead and redirect to the specified destination
  */
 export async function submitAndRedirect(
-  data: LeadFormData, 
+  data: LeadFormData,
   redirectType: 'thank_you' | 'whatsapp'
 ): Promise<SubmitResult> {
   const result = await submitLead(data)
-  
+
   if (result.success && result.data) {
-    const targetUrl = redirectType === 'whatsapp' 
-      ? result.data.whatsapp_url 
+    const targetUrl = redirectType === 'whatsapp'
+      ? result.data.whatsapp_url
       : result.data.thank_you_url
 
     // For thank-you page, navigate in same window
@@ -156,14 +156,14 @@ export async function submitAndRedirect(
       }
     }
   }
-  
+
   return result
 }
 
 export function getWhatsAppUrl(data?: Partial<LeadFormData>): string {
   const phone = import.meta.env.VITE_WHATSAPP_NUMBER || '5491100000000'
   let message = '¡Hola! Me interesa contactarlos por un proyecto.'
-  
+
   if (data?.nombre) {
     message = `¡Hola! Soy ${data.nombre}.`
     if (data.tipoProyecto) {
@@ -178,6 +178,6 @@ export function getWhatsAppUrl(data?: Partial<LeadFormData>): string {
       message += ` ${data.mensaje}`
     }
   }
-  
+
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 }

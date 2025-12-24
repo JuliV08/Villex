@@ -60,38 +60,24 @@ services:
       - "8000"
 
   # =================================================
-  # Frontend Build (genera archivos estáticos)
+  # Nginx Reverse Proxy + Frontend
   # =================================================
-  frontend:
+  nginx:
     build:
       context: .
       dockerfile: frontend.Dockerfile
       args:
         - VITE_API_URL=${VITE_API_URL:-/api}
-    container_name: villex_frontend_build
-    volumes:
-      - frontend_build:/usr/share/nginx/html
-    # Este contenedor solo existe para el build
-    # Nginx copiará los archivos del volumen
-    command: [ "echo", "Build completed" ]
-
-  # =================================================
-  # Nginx Reverse Proxy
-  # =================================================
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
     container_name: villex_nginx
     restart: unless-stopped
     depends_on:
       - backend
-      - frontend
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - frontend_build:/usr/share/nginx/html:ro
+      # Sobrescribir la config de nginx con la nuestra
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_files:/usr/share/nginx/static:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
@@ -103,8 +89,6 @@ services:
 volumes:
   postgres_data:
     name: villex_postgres_data
-  frontend_build:
-    name: villex_frontend_build
   static_files:
     name: villex_static_files
 
