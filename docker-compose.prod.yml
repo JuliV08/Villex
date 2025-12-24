@@ -51,6 +51,8 @@ services:
       - WHATSAPP_PHONE=${WHATSAPP_PHONE:-}
       - WHATSAPP_TEMPLATE=${WHATSAPP_TEMPLATE:-}
       - IP_HASH_SECRET=${IP_HASH_SECRET:-change-me}
+    volumes:
+      - static_files:/home/app/web/staticfiles
     networks:
       - villex_network
     expose:
@@ -89,6 +91,7 @@ services:
       - "443:443"
     volumes:
       - frontend_build:/usr/share/nginx/html:ro
+      - static_files:/usr/share/nginx/static:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - villex_network
@@ -101,6 +104,8 @@ volumes:
     name: villex_postgres_data
   frontend_build:
     name: villex_frontend_build
+  static_files:
+    name: villex_static_files
 
 # =================================================
 # Network
