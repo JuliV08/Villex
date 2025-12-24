@@ -19,7 +19,9 @@ COPY . .
 
 # Argumentos de build para variables de entorno
 ARG VITE_API_URL
+ARG VITE_WHATSAPP_NUMBER
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_WHATSAPP_NUMBER=$VITE_WHATSAPP_NUMBER
 
 # Build de producción
 RUN npm run build
