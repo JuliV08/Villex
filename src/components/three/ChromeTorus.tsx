@@ -14,7 +14,7 @@ export function ChromeTorus({ mousePosition }: ChromeTorusProps) {
   const isMobile = useIsMobile()
 
   // Scale más pequeño en mobile para que se aprecie mejor
-  const torusScale = isMobile ? 0.7 : 1.2
+  const torusScale = isMobile ? 0.85 : 1.2
 
   useFrame((_state, delta) => {
     if (!meshRef.current || reducedMotion) return
