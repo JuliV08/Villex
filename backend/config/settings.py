@@ -125,6 +125,12 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
+# CSRF Configuration for HTTPS
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173').split(',')
+]
+
 
 # =============================================================================
 # Cache Configuration (for rate limiting)
