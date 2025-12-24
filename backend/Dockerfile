@@ -50,6 +50,9 @@ RUN pip install --no-cache /wheels/*
 # Copiar proyecto
 COPY --chown=app:app . .
 
+# Crear directorio para archivos estáticos
+RUN mkdir -p /home/app/web/staticfiles && chown -R app:app /home/app/web/staticfiles
+
 # Hacer ejecutable el entrypoint
 RUN chmod +x /home/app/web/entrypoint.sh
 
