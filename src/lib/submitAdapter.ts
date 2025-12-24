@@ -149,10 +149,9 @@ export async function submitAndRedirect(
     if (redirectType === 'whatsapp') {
       window.open(targetUrl, '_blank')
     } else {
-      // Redirect to thank-you page (could be backend URL or Calendly directly)
-      const apiUrl = import.meta.env.VITE_API_URL
-      if (apiUrl && result.data.thank_you_url) {
-        window.location.href = `${apiUrl}${result.data.thank_you_url}`
+      // Redirect to thank-you page (backend returns full path)
+      if (result.data.thank_you_url) {
+        window.location.href = result.data.thank_you_url
       }
     }
   }
