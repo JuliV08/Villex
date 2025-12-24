@@ -10,7 +10,7 @@ function Lights() {
     <>
       {/* Ambient fill */}
       <ambientLight intensity={0.4} />
-      
+
       {/* Key light - cyan tint */}
       <directionalLight
         position={[5, 5, 5]}
@@ -18,14 +18,14 @@ function Lights() {
         color="#00e5ff"
         castShadow={false}
       />
-      
+
       {/* Rim light - violet */}
       <pointLight
         position={[-5, 2, -5]}
         intensity={0.8}
         color="#8b5cf6"
       />
-      
+
       {/* Accent light - magenta */}
       <pointLight
         position={[3, -3, 2]}
@@ -40,10 +40,10 @@ function Scene({ mousePosition }: { mousePosition: { x: number; y: number } }) {
   return (
     <>
       <Lights />
-      
+
       {/* Main object */}
       <ChromeTorus mousePosition={mousePosition} />
-      
+
       {/* Secondary spheres for depth - positioned lower */}
       <FloatingSphere
         position={[2.5, 0.5, -1]}
@@ -63,7 +63,7 @@ function Scene({ mousePosition }: { mousePosition: { x: number; y: number } }) {
         color="#ff00ff"
         mousePosition={mousePosition}
       />
-      
+
       <Preload all />
     </>
   )
@@ -98,12 +98,28 @@ export function HeroScene() {
     setMousePosition({ x, y })
   }, [])
 
+  const handleTouchMove = useCallback((event: TouchEvent) => {
+    // Solo usar el primer toque para la interactividad
+    if (event.touches.length > 0) {
+      const touch = event.touches[0]
+      // Normalizar posición del touch a -1 a 1
+      const x = (touch.clientX / window.innerWidth) * 2 - 1
+      const y = -(touch.clientY / window.innerHeight) * 2 + 1
+      setMousePosition({ x, y })
+    }
+  }, [])
+
   useEffect(() => {
     if (reducedMotion) return
 
     window.addEventListener('mousemove', handleMouseMove)
-    return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [handleMouseMove, reducedMotion])
+    window.addEventListener('touchmove', handleTouchMove, { passive: true })
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('touchmove', handleTouchMove)
+    }
+  }, [handleMouseMove, handleTouchMove, reducedMotion])
 
   // Check WebGL support
   useEffect(() => {
@@ -128,7 +144,7 @@ export function HeroScene() {
         <Canvas
           dpr={[1, 1.5]}
           camera={{ position: [0, 0, 5], fov: 45 }}
-          gl={{ 
+          gl={{
             antialias: true,
             alpha: true,
             powerPreference: 'high-performance',
@@ -138,7 +154,7 @@ export function HeroScene() {
           <Scene mousePosition={mousePosition} />
         </Canvas>
       </Suspense>
-      
+
       {/* Gradient overlay for text legibility - stronger at top for navbar */}
       <div className="absolute inset-0 bg-gradient-to-b from-dark-900 via-dark-900/30 to-dark-900 pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-r from-dark-900/60 via-transparent to-dark-900/60 pointer-events-none" />

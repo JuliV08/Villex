@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Mesh } from 'three'
 import { Float } from '@react-three/drei'
-import { useReducedMotion } from '@/hooks'
+import { useReducedMotion, useIsMobile } from '@/hooks'
 
 interface ChromeTorusProps {
   mousePosition: { x: number; y: number }
@@ -11,6 +11,10 @@ interface ChromeTorusProps {
 export function ChromeTorus({ mousePosition }: ChromeTorusProps) {
   const meshRef = useRef<Mesh>(null)
   const reducedMotion = useReducedMotion()
+  const isMobile = useIsMobile()
+
+  // Scale más pequeño en mobile para que se aprecie mejor
+  const torusScale = isMobile ? 0.7 : 1.2
 
   useFrame((_state, delta) => {
     if (!meshRef.current || reducedMotion) return
@@ -19,7 +23,7 @@ export function ChromeTorus({ mousePosition }: ChromeTorusProps) {
     meshRef.current.rotation.x += delta * 0.1
     meshRef.current.rotation.y += delta * 0.15
 
-    // Parallax sutil con el mouse
+    // Parallax sutil con el mouse/touch
     const targetRotationX = mousePosition.y * 0.3
     const targetRotationZ = mousePosition.x * 0.2
 
@@ -28,7 +32,7 @@ export function ChromeTorus({ mousePosition }: ChromeTorusProps) {
   })
 
   const torusKnot = (
-    <mesh ref={meshRef} scale={1.2} position={[0, -0.3, 0]}>
+    <mesh ref={meshRef} scale={torusScale} position={[0, -0.3, 0]}>
       <torusKnotGeometry args={[1, 0.35, 100, 16, 2, 3]} />
       <meshStandardMaterial
         color="#00e5ff"
