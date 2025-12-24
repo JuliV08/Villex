@@ -18,7 +18,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-villex_leads}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-villex_leads}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -70,7 +70,7 @@ services:
       - frontend_build:/usr/share/nginx/html
     # Este contenedor solo existe para el build
     # Nginx copiará los archivos del volumen
-    command: ["echo", "Build completed"]
+    command: [ "echo", "Build completed" ]
 
   # =================================================
   # Nginx Reverse Proxy
@@ -86,10 +86,10 @@ services:
       - frontend
     ports:
       - "80:80"
-      # - "443:443"  # Descomentar para HTTPS
+      - "443:443"
     volumes:
       - frontend_build:/usr/share/nginx/html:ro
-      # - /etc/letsencrypt:/etc/letsencrypt:ro  # Para SSL
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - villex_network
 
