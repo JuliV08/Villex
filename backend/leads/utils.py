@@ -168,4 +168,4 @@ def build_thank_you_url(lead_token: str) -> str:
     """
     Build thank-you page URL.
     """
-    return f"/gracias/{lead_token}/"
+    return f"/api/gracias/{lead_token}/"
