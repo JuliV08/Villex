@@ -48,7 +48,7 @@ services:
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost}
-      - CALENDLY_BASE_URL=${CALENDLY_BASE_URL:-https://calendly.com}
+      - CALENDLY_BASE_URL=${CALENDLY_BASE_URL:-https://calendly.com/villellijulian/30min}
       - WHATSAPP_PHONE=${WHATSAPP_PHONE:-}
       - WHATSAPP_TEMPLATE=${WHATSAPP_TEMPLATE:-}
       - IP_HASH_SECRET=${IP_HASH_SECRET:-change-me}

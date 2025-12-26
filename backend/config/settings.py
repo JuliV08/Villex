@@ -156,7 +156,7 @@ CACHES = {
 # =============================================================================
 
 # Calendly integration
-CALENDLY_BASE_URL = os.getenv('CALENDLY_BASE_URL', 'https://calendly.com/villex/30min')
+CALENDLY_BASE_URL = os.getenv('CALENDLY_BASE_URL', 'https://calendly.com/villellijulian/30min')
 
 # WhatsApp settings
 WHATSAPP_PHONE = os.getenv('WHATSAPP_PHONE', '5491123456789')
