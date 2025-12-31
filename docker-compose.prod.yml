@@ -81,9 +81,9 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - static_files:/usr/share/nginx/static:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
-      # DyM Cosmeticos static files
-      - /opt/dym-cosmeticos/staticfiles:/opt/dym-cosmeticos/staticfiles:ro
-      - /opt/dym-cosmeticos/media:/opt/dym-cosmeticos/media:ro
+      # DyM Cosmeticos volumes (external Docker volumes for real-time updates)
+      - dym-cosmeticos_static_volume:/opt/dym-cosmeticos/staticfiles:ro
+      - dym-cosmeticos_media_volume:/opt/dym-cosmeticos/media:ro
     networks:
       - villex_network
 
@@ -95,6 +95,10 @@ volumes:
     name: villex_postgres_data
   static_files:
     name: villex_static_files
+  dym-cosmeticos_static_volume:
+    external: true
+  dym-cosmeticos_media_volume:
+    external: true
 
 # =================================================
 # Network
