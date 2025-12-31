@@ -23,7 +23,9 @@ try:
     exit(0)
 except:
     exit(1)
-" 2>/dev/null; do
+    print(f'Error de conexión: {e}')
+    exit(1)
+"; do
     echo "⏳ PostgreSQL no está listo - esperando..."
     sleep 2
 done
