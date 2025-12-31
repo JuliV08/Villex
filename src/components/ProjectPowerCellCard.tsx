@@ -24,6 +24,7 @@ interface ProjectPowerCellCardProps {
   logoScale?: number;
   previewSrc: string;
   initialCharge?: number; // 0-100, starting charge level (will fill to 100 on hover/view)
+  isActive?: boolean; // If true, hover effects are enabled (used for carousel center card)
   onClick: () => void;
 }
 
@@ -34,6 +35,7 @@ export function ProjectPowerCellCard({
   logoScale = 1,
   previewSrc,
   initialCharge = 60,
+  isActive = true, // Default true for backward compatibility
   onClick,
 }: ProjectPowerCellCardProps) {
   const totalSegments = 5;
@@ -109,7 +111,7 @@ export function ProjectPowerCellCard({
   const desktopChargeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = () => {
-    if (isMobile) return;
+    if (isMobile || !isActive) return;
     setIsHovered(true);
     // Show "CHARGED" after battery fills (5 segments * 80ms delay + 400ms animation)
     desktopChargeTimeoutRef.current = setTimeout(() => setIsDesktopCharged(true), 800);
@@ -123,6 +125,9 @@ export function ProjectPowerCellCard({
       clearTimeout(desktopChargeTimeoutRef.current);
     }
   };
+
+  // Combine isActive with hover for effects
+  const canShowHoverEffects = isActive && isHovered;
 
   // Mobile-specific animation state (only affects mobile)
   const mobileActive = isMobile && isInView;
@@ -194,26 +199,22 @@ export function ProjectPowerCellCard({
           <div className="flex flex-col-reverse gap-1">
             {[...Array(totalSegments)].map((_, index) => {
               const isInitiallyFilled = index < initialFilledSegments;
+              // Fill all segments when hovering (active card) or mobile in view
+              const isFilled = canShowHoverEffects || mobileActive || isInitiallyFilled;
               
               return (
                 <div
                   key={index}
-                  className={`
-                    w-2 h-4 rounded-sm transition-all
-                    ${isInitiallyFilled 
-                      ? 'bg-primary-400/70 shadow-[0_0_6px_rgba(0,229,255,0.5)]' 
-                      : 'bg-dark-600/50 border border-dark-500/30'
-                    }
-                    ${/* Desktop: hover fills all segments */ ''}
-                    group-hover:bg-primary-400 
-                    group-hover:shadow-[0_0_10px_rgba(0,229,255,0.9)]
-                    group-hover:border-transparent
-                    ${/* Mobile: in-view fills all segments */ ''}
-                    ${mobileActive ? 'bg-primary-400 shadow-[0_0_10px_rgba(0,229,255,0.9)] border-transparent' : ''}
-                  `}
+                  className={`w-2 h-4 rounded-sm transition-all ${
+                    isFilled
+                      ? 'bg-primary-400 shadow-[0_0_10px_rgba(0,229,255,0.9)] border-transparent'
+                      : isInitiallyFilled 
+                        ? 'bg-primary-400/70 shadow-[0_0_6px_rgba(0,229,255,0.5)]' 
+                        : 'bg-dark-600/50 border border-dark-500/30'
+                  }`}
                   style={{
                     transitionDuration: '400ms',
-                    transitionDelay: `${index * 80}ms`,
+                    transitionDelay: (canShowHoverEffects || mobileActive) && !isInitiallyFilled ? `${(index - initialFilledSegments) * 80}ms` : '0ms',
                     transitionTimingFunction: 'ease-out',
                   }}
                 />
@@ -270,7 +271,7 @@ export function ProjectPowerCellCard({
         </div>
 
         {/* ===== PARTICLES (appear when charged) ===== */}
-        <div className={`power-cell-particles ${mobileActive ? 'active' : ''} group-hover:opacity-100`}>
+        <div className={`power-cell-particles ${(mobileActive || canShowHoverEffects) ? 'active' : ''}`}>
           <div className="power-cell-particle" style={{ left: '5%' }} />
           <div className="power-cell-particle" />
           <div className="power-cell-particle" />

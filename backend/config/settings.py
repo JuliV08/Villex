@@ -170,3 +170,21 @@ IP_HASH_SECRET = os.getenv('IP_HASH_SECRET', 'change-this-secret-in-production')
 SPAM_RATE_LIMIT_COUNT = 3  # Max submissions
 SPAM_RATE_LIMIT_SECONDS = 600  # Per 10 minutes
 SPAM_SCORE_THRESHOLD = 5  # Mark as spam if score >= this
+
+
+# =============================================================================
+# Email Configuration (for confirmation emails)
+# =============================================================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.sendgrid.net')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'apikey')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'VILLEX <noreply@villex.com.ar>')
+
+# Email confirmation settings
+EMAIL_CONFIRM_EXPIRY_HOURS = 24
+
+# Frontend URL for email links
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://villex.com.ar')

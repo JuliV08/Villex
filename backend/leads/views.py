@@ -1,6 +1,6 @@
 """
 Views for leads app.
-API endpoint and thank-you page.
+API endpoints for lead creation, email confirmation, and thank-you page.
 """
 
 import json
@@ -18,9 +18,12 @@ from .utils import (
     check_rate_limit,
     calculate_spam_score,
     validate_contact,
+    extract_email_from_contact,
     build_calendly_url,
     build_whatsapp_url,
     build_thank_you_url,
+    send_confirmation_email,
+    check_email_cooldown,
 )
 
 
@@ -29,6 +32,7 @@ class LeadCreateView(View):
     """
     POST /api/leads/
     Create a new lead from the contact form.
+    Now implements email confirmation flow.
     """
     
     def post(self, request):
@@ -71,6 +75,9 @@ class LeadCreateView(View):
                 status=400
             )
         
+        # Extract email if contact is an email
+        contact_email = extract_email_from_contact(contact)
+        
         # Get IP and user agent
         client_ip = get_client_ip(request)
         ip_hash = hash_ip(client_ip)
@@ -88,7 +95,6 @@ class LeadCreateView(View):
         
         # Determine status
         is_spam = spam_score >= settings.SPAM_SCORE_THRESHOLD
-        status = 'spam' if is_spam else 'new'
         
         # Convert has_domain_hosting to boolean or None
         if has_domain_hosting is not None:
@@ -97,10 +103,20 @@ class LeadCreateView(View):
             else:
                 has_domain_hosting = bool(has_domain_hosting)
         
+        # Determine initial status
+        if is_spam:
+            status = 'spam'
+        elif contact_email:
+            status = 'pending_email_confirm'
+        else:
+            # Phone contact - can't send email confirmation
+            status = 'new'
+        
         # Create Lead (ALWAYS save, even if spam)
         lead = Lead.objects.create(
             name=name,
             contact=contact,
+            contact_email=contact_email,
             project_type=project_type,
             message=message,
             timeframe=timeframe,
@@ -123,13 +139,34 @@ class LeadCreateView(View):
                 'spam_score': spam_score,
                 'is_spam': is_spam,
                 'rate_limited': is_rate_limited,
+                'has_email': bool(contact_email),
             }
         )
         
-        # Build response URLs
+        # Build response
         lead_token = str(lead.lead_token)
+        
+        # If email contact and not spam, send confirmation email
+        if contact_email and not is_spam:
+            email_sent = send_confirmation_email(lead)
+            
+            LeadEvent.objects.create(
+                lead=lead,
+                event_type='confirmation_email_sent' if email_sent else 'confirmation_email_failed',
+                raw_payload={'email': contact_email}
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'lead_token': lead_token,
+                'requires_email_confirmation': True,
+                'email_sent': email_sent,
+                'message': 'Revisá tu email para confirmar y agendar tu llamada.',
+            }, status=201)
+        
+        # Phone contact or spam - return URLs directly (old behavior)
         thank_you_url = build_thank_you_url(lead_token)
-        calendly_url = build_calendly_url(lead_token)
+        calendly_url = build_calendly_url(lead_token, contact_email, name)
         whatsapp_url = build_whatsapp_url({
             'name': name,
             'project_type': project_type,
@@ -139,10 +176,158 @@ class LeadCreateView(View):
         return JsonResponse({
             'success': True,
             'lead_token': lead_token,
+            'requires_email_confirmation': False,
             'thank_you_url': thank_you_url,
             'calendly_url': calendly_url,
             'whatsapp_url': whatsapp_url,
         }, status=201)
+    
+    def options(self, request):
+        """Handle preflight CORS requests."""
+        response = JsonResponse({})
+        response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class EmailConfirmView(View):
+    """
+    GET /api/leads/confirm?token=...
+    Confirm email and return Calendly URL.
+    """
+    
+    def get(self, request):
+        token = request.GET.get('token', '').strip()
+        
+        if not token:
+            return JsonResponse({
+                'success': False,
+                'error': 'Token requerido',
+            }, status=400)
+        
+        try:
+            lead = Lead.objects.get(email_confirm_token=token)
+        except Lead.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Token inválido o expirado',
+            }, status=404)
+        
+        # Check if already confirmed
+        if lead.status == 'email_confirmed':
+            calendly_url = build_calendly_url(
+                str(lead.lead_token), 
+                lead.contact_email, 
+                lead.name
+            )
+            return JsonResponse({
+                'success': True,
+                'already_confirmed': True,
+                'lead_token': str(lead.lead_token),
+                'calendly_url': calendly_url,
+                'name': lead.name,
+                'email': lead.contact_email,
+            })
+        
+        # Check if token is valid (not expired)
+        if not lead.is_token_valid():
+            return JsonResponse({
+                'success': False,
+                'error': 'El link ha expirado. Solicitá uno nuevo.',
+                'can_resend': True,
+                'email': lead.contact_email,
+            }, status=410)
+        
+        # Confirm email
+        lead.confirm_email()
+        
+        # Log event
+        LeadEvent.objects.create(
+            lead=lead,
+            event_type='email_confirmed',
+            raw_payload={'token': token[:8] + '...'}
+        )
+        
+        # Build Calendly URL with prefill
+        calendly_url = build_calendly_url(
+            str(lead.lead_token), 
+            lead.contact_email, 
+            lead.name
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'lead_token': str(lead.lead_token),
+            'calendly_url': calendly_url,
+            'name': lead.name,
+            'email': lead.contact_email,
+        })
+    
+    def options(self, request):
+        """Handle preflight CORS requests."""
+        response = JsonResponse({})
+        response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ResendConfirmView(View):
+    """
+    POST /api/leads/resend-confirm
+    Resend confirmation email.
+    """
+    
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return JsonResponse({
+                'success': False,
+                'error': 'Email requerido',
+            }, status=400)
+        
+        # Check cooldown
+        if check_email_cooldown(email):
+            return JsonResponse({
+                'success': False,
+                'error': 'Esperá un momento antes de reenviar.',
+            }, status=429)
+        
+        try:
+            lead = Lead.objects.filter(
+                contact_email=email,
+                status='pending_email_confirm'
+            ).latest('created_at')
+        except Lead.DoesNotExist:
+            # Don't reveal if email exists or not
+            return JsonResponse({
+                'success': True,
+                'message': 'Si el email existe, recibirás un nuevo link.',
+            })
+        
+        # Generate new token and send
+        lead.generate_confirm_token()
+        email_sent = send_confirmation_email(lead)
+        
+        LeadEvent.objects.create(
+            lead=lead,
+            event_type='confirmation_email_resent' if email_sent else 'confirmation_email_resend_failed',
+            raw_payload={'email': email}
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Si el email existe, recibirás un nuevo link.',
+        })
     
     def options(self, request):
         """Handle preflight CORS requests."""
@@ -164,7 +349,7 @@ def thank_you_view(request, lead_token):
         raise Http404("Lead no encontrado")
     
     # Build URLs
-    calendly_url = build_calendly_url(str(lead.lead_token))
+    calendly_url = build_calendly_url(str(lead.lead_token), lead.contact_email, lead.name)
     whatsapp_url = build_whatsapp_url({
         'name': lead.name,
         'project_type': lead.project_type,

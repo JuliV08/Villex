@@ -1,5 +1,5 @@
-import ProjectsSection from '@/components/ProjectsSection'
+import { ProjectsCarousel } from '@/components/ProjectsCarousel'
 
 export function Projects() {
-  return <ProjectsSection />
+  return <ProjectsCarousel />
 }

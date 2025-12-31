@@ -1,6 +1,6 @@
 """
 Utility functions for leads app.
-Anti-spam detection, URL building, etc.
+Anti-spam detection, URL building, email confirmation, etc.
 """
 
 import re
@@ -8,6 +8,9 @@ import hashlib
 from urllib.parse import urlencode
 from django.conf import settings
 from django.core.cache import cache
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 
 def hash_ip(ip_address: str) -> str:
@@ -45,6 +48,50 @@ def check_rate_limit(ip_hash: str) -> bool:
     # Increment count
     cache.set(cache_key, count + 1, settings.SPAM_RATE_LIMIT_SECONDS)
     return False
+
+
+def check_email_cooldown(email: str) -> bool:
+    """
+    Check if email is in cooldown period (to prevent spam resends).
+    Returns True if in cooldown (should block), False if OK.
+    """
+    cache_key = f"email_cooldown_{hashlib.md5(email.lower().encode()).hexdigest()}"
+    if cache.get(cache_key):
+        return True
+    cache.set(cache_key, True, 60)  # 60 second cooldown
+    return False
+
+
+# Common disposable email domains
+DISPOSABLE_EMAIL_DOMAINS = {
+    'tempmail.com', 'throwaway.email', 'guerrillamail.com', 'mailinator.com',
+    'temp-mail.org', '10minutemail.com', 'fakeinbox.com', 'trashmail.com',
+    'yopmail.com', 'maildrop.cc', 'getairmail.com', 'sharklasers.com',
+    'guerrillamailblock.com', 'pokemail.net', 'spam4.me', 'grr.la',
+    'dispostable.com', 'tempail.com', 'emailondeck.com', 'getnada.com',
+}
+
+
+def is_disposable_email(email: str) -> bool:
+    """
+    Check if email is from a known disposable email provider.
+    """
+    if not email or '@' not in email:
+        return False
+    domain = email.lower().split('@')[1]
+    return domain in DISPOSABLE_EMAIL_DOMAINS
+
+
+def extract_email_from_contact(contact: str) -> str:
+    """
+    Extract email from contact field if it's an email.
+    Returns empty string if not an email.
+    """
+    contact = contact.strip()
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if re.match(email_pattern, contact):
+        return contact.lower()
+    return ''
 
 
 def calculate_spam_score(data: dict, honeypot_filled: bool) -> int:
@@ -92,6 +139,11 @@ def calculate_spam_score(data: dict, honeypot_filled: bool) -> int:
     if message and message == message.upper() and len(message) > 20:
         score += 2
     
+    # Disposable email
+    contact = data.get('contact', '')
+    if is_disposable_email(contact):
+        score += 3
+    
     return score
 
 
@@ -120,9 +172,9 @@ def validate_contact(contact: str) -> tuple[bool, str]:
     return False, "Ingresá un email o teléfono válido"
 
 
-def build_calendly_url(lead_token: str) -> str:
+def build_calendly_url(lead_token: str, email: str = '', name: str = '') -> str:
     """
-    Build Calendly URL with UTM parameters and lead token.
+    Build Calendly URL with UTM parameters, lead token, and prefill data.
     """
     base_url = settings.CALENDLY_BASE_URL
     
@@ -132,6 +184,12 @@ def build_calendly_url(lead_token: str) -> str:
         'utm_campaign': 'agenda_30min',
         'utm_content': str(lead_token),
     }
+    
+    # Add prefill parameters if available
+    if email:
+        params['email'] = email
+    if name:
+        params['name'] = name
     
     return f"{base_url}?{urlencode(params)}"
 
@@ -169,3 +227,59 @@ def build_thank_you_url(lead_token: str) -> str:
     Build thank-you page URL.
     """
     return f"/api/gracias/{lead_token}/"
+
+
+def build_confirm_url(token: str) -> str:
+    """
+    Build email confirmation URL for frontend.
+    """
+    frontend_url = settings.FRONTEND_URL.rstrip('/')
+    return f"{frontend_url}/confirm?token={token}"
+
+
+def send_confirmation_email(lead) -> bool:
+    """
+    Send email confirmation to lead.
+    Returns True if sent successfully.
+    """
+    if not lead.contact_email:
+        return False
+    
+    # Check cooldown
+    if check_email_cooldown(lead.contact_email):
+        return False
+    
+    # Generate token if not exists or expired
+    if not lead.is_token_valid():
+        lead.generate_confirm_token()
+    
+    confirm_url = build_confirm_url(lead.email_confirm_token)
+    
+    context = {
+        'lead_name': lead.name,
+        'confirm_url': confirm_url,
+        'project_type': lead.project_type,
+    }
+    
+    try:
+        html_message = render_to_string('leads/confirm_email.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject='Confirmá tu email para agendar tu llamada | VILLEX',
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[lead.contact_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+        # Update email sent timestamp
+        from django.utils import timezone
+        lead.email_sent_at = timezone.now()
+        lead.save(update_fields=['email_sent_at'])
+        
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False

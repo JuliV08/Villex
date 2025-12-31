@@ -60,6 +60,8 @@ export function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitAction, setSubmitAction] = useState<'agenda' | 'whatsapp' | null>(null)
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [emailConfirmationPending, setEmailConfirmationPending] = useState(false)
+  const [submittedEmail, setSubmittedEmail] = useState('')
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
@@ -102,6 +104,12 @@ export function Contact() {
     setSubmitAction(null)
     
     if (result.success) {
+      // Check if email confirmation is required
+      if (result.requiresEmailConfirmation) {
+        setEmailConfirmationPending(true)
+        setSubmittedEmail(formData.contacto)
+      }
+      
       // Reset form on success
       setFormData({
         nombre: '',
@@ -171,6 +179,32 @@ export function Contact() {
         className="max-w-2xl mx-auto"
       >
         <GlassCard variant="strong" hover={false} className="p-8">
+          {emailConfirmationPending ? (
+            /* Email Confirmation Pending State */
+            <div className="text-center py-8 space-y-6">
+              <div className="w-20 h-20 mx-auto rounded-full bg-primary-400/20 flex items-center justify-center">
+                <svg className="w-10 h-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white">¡Revisá tu email!</h3>
+              <p className="text-dark-400 max-w-md mx-auto">
+                Te enviamos un email a <span className="text-primary-400 font-medium">{submittedEmail}</span> con un link para confirmar y agendar tu llamada.
+              </p>
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-sm text-dark-500">
+                  ¿No lo encontrás? Revisá tu carpeta de spam o 
+                  <button 
+                    type="button"
+                    onClick={() => setEmailConfirmationPending(false)}
+                    className="text-primary-400 hover:text-primary-300 ml-1 underline"
+                  >
+                    envialo de nuevo
+                  </button>
+                </p>
+              </div>
+            </div>
+          ) : (
           <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
             {/* Honeypots - hidden from users, visible to bots */}
             <input
@@ -412,6 +446,7 @@ export function Contact() {
               Nunca compartimos tus datos con terceros.
             </p>
           </form>
+          )}
         </GlassCard>
       </motion.div>
     </Section>

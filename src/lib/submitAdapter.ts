@@ -16,14 +16,20 @@ export interface LeadFormData {
 export interface LeadApiResponse {
   success: boolean
   lead_token: string
-  thank_you_url: string
-  calendly_url: string
-  whatsapp_url: string
+  requires_email_confirmation: boolean
+  // Only present if requires_email_confirmation is false
+  thank_you_url?: string
+  calendly_url?: string
+  whatsapp_url?: string
+  // Only present if requires_email_confirmation is true
+  email_sent?: boolean
+  message?: string
 }
 
 export interface SubmitResult {
   success: boolean
   message: string
+  requiresEmailConfirmation?: boolean
   data?: LeadApiResponse
 }
 
@@ -34,9 +40,11 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
     return {
       success: true,
       message: 'Gracias por tu mensaje.',
+      requiresEmailConfirmation: false,
       data: {
         success: true,
         lead_token: '',
+        requires_email_confirmation: false,
         thank_you_url: '/',
         calendly_url: '/',
         whatsapp_url: getWhatsAppUrl(data),
@@ -77,10 +85,23 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
         }
       }
 
+      const apiResponse = result as LeadApiResponse
+
+      // Check if email confirmation is required
+      if (apiResponse.requires_email_confirmation) {
+        return {
+          success: true,
+          message: apiResponse.message || 'Revisá tu email para confirmar y agendar tu llamada.',
+          requiresEmailConfirmation: true,
+          data: apiResponse,
+        }
+      }
+
       return {
         success: true,
         message: '¡Mensaje enviado!',
-        data: result as LeadApiResponse,
+        requiresEmailConfirmation: false,
+        data: apiResponse,
       }
     }
 
@@ -112,7 +133,8 @@ export async function submitLead(data: LeadFormData): Promise<SubmitResult> {
 
       return {
         success: true,
-        message: '¡Mensaje enviado! Te contactaremos pronto.'
+        message: '¡Mensaje enviado! Te contactaremos pronto.',
+        requiresEmailConfirmation: false,
       }
     }
 
@@ -139,20 +161,23 @@ export async function submitAndRedirect(
 ): Promise<SubmitResult> {
   const result = await submitLead(data)
 
-  if (result.success && result.data) {
+  // If email confirmation is required, don't redirect anywhere
+  if (result.success && result.requiresEmailConfirmation) {
+    return result
+  }
+
+  if (result.success && result.data && !result.requiresEmailConfirmation) {
     const targetUrl = redirectType === 'whatsapp'
       ? result.data.whatsapp_url
       : result.data.thank_you_url
 
     // For thank-you page, navigate in same window
     // For WhatsApp, open in new tab then stay on page
-    if (redirectType === 'whatsapp') {
+    if (redirectType === 'whatsapp' && targetUrl) {
       window.open(targetUrl, '_blank')
-    } else {
+    } else if (targetUrl) {
       // Redirect to thank-you page (backend returns full path)
-      if (result.data.thank_you_url) {
-        window.location.href = result.data.thank_you_url
-      }
+      window.location.href = targetUrl
     }
   }
 
@@ -179,4 +204,59 @@ export function getWhatsAppUrl(data?: Partial<LeadFormData>): string {
   }
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+}
+
+/**
+ * Confirm email token and get Calendly URL
+ */
+export interface ConfirmEmailResponse {
+  success: boolean
+  error?: string
+  can_resend?: boolean
+  already_confirmed?: boolean
+  lead_token?: string
+  calendly_url?: string
+  name?: string
+  email?: string
+}
+
+export async function confirmEmail(token: string): Promise<ConfirmEmailResponse> {
+  const apiUrl = import.meta.env.VITE_API_URL
+  
+  if (!apiUrl) {
+    return { success: false, error: 'API no configurada' }
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/leads/confirm?token=${encodeURIComponent(token)}`)
+    const result = await response.json()
+    
+    return result as ConfirmEmailResponse
+  } catch (error) {
+    console.error('Confirm email error:', error)
+    return { success: false, error: 'Error de conexión' }
+  }
+}
+
+/**
+ * Resend confirmation email
+ */
+export async function resendConfirmEmail(email: string): Promise<{ success: boolean; message?: string; error?: string }> {
+  const apiUrl = import.meta.env.VITE_API_URL
+  
+  if (!apiUrl) {
+    return { success: false, error: 'API no configurada' }
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/leads/resend-confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    return await response.json()
+  } catch (error) {
+    console.error('Resend email error:', error)
+    return { success: false, error: 'Error de conexión' }
+  }
 }
