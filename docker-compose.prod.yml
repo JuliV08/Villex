@@ -45,7 +45,7 @@ services:
       - POSTGRES_PORT=5432
       - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
       - DEBUG=${DEBUG:-False}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-villex.com.ar,www.villex.com.ar,localhost}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost}
       - CALENDLY_BASE_URL=${CALENDLY_BASE_URL:-https://calendly.com/villellijulian/30min}
@@ -81,6 +81,8 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - static_files:/usr/share/nginx/static:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Frontend Application (SPA)
+      - villex_frontend_build:/usr/share/nginx/html:ro
       # DyM Cosmeticos volumes (external Docker volumes for real-time updates)
       - dym-cosmeticos_static_volume:/opt/dym-cosmeticos/staticfiles:ro
       - dym-cosmeticos_media_volume:/opt/dym-cosmeticos/media:ro
@@ -98,6 +100,8 @@ volumes:
   dym-cosmeticos_static_volume:
     external: true
   dym-cosmeticos_media_volume:
+    external: true
+  villex_frontend_build:
     external: true
 
 # =================================================
