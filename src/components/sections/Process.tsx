@@ -30,8 +30,13 @@ export function Process() {
 
       {/* Timeline */}
       <div className="relative">
-        {/* Line connector - desktop */}
-        <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary-400/30 to-transparent -translate-y-1/2" />
+        {/* Line connector - desktop: línea continua horizontal con glow */}
+        <div className="hidden lg:block absolute top-6 left-[10%] right-[10%]">
+          {/* Glow effect */}
+          <div className="absolute inset-0 h-1 bg-primary-400/30 blur-sm" />
+          {/* Main line */}
+          <div className="h-px bg-gradient-to-r from-primary-400/60 via-primary-400/80 to-primary-400/60" />
+        </div>
 
         {/* Line connector - mobile: línea continua vertical con glow */}
         <div className="lg:hidden absolute left-1/2 top-6 bottom-6 -translate-x-1/2">
@@ -61,8 +66,8 @@ export function Process() {
                   <div className="absolute inset-0 rounded-full bg-primary-400/20 blur-xl opacity-50" />
                 </div>
 
-                {/* Content card - con fondo para que la línea pase detrás elegantemente */}
-                <div className="relative z-10 bg-dark-800/80 backdrop-blur-sm border border-dark-700/50 rounded-xl px-4 py-3 lg:bg-transparent lg:border-0 lg:p-0">
+                {/* Content card - con fondo en mobile y desktop */}
+                <div className="relative z-10 bg-dark-800/80 backdrop-blur-sm border border-dark-700/50 rounded-xl px-4 py-3">
                   {/* Title */}
                   <h3 className="font-display font-semibold text-lg text-white mb-2">
                     {step.title}
