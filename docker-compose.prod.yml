@@ -77,10 +77,13 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      # Sobrescribir la config de nginx con la nuestra
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Configuraciones de nginx (villex + otros proyectos)
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - static_files:/usr/share/nginx/static:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      # DyM Cosmeticos static files
+      - /opt/dym-cosmeticos/staticfiles:/opt/dym-cosmeticos/staticfiles:ro
+      - /opt/dym-cosmeticos/media:/opt/dym-cosmeticos/media:ro
     networks:
       - villex_network
 
