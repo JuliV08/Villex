@@ -161,3 +161,275 @@
     @apply text-base text-dark-400 leading-relaxed;
   }
 }
+
+/* =============================================================================
+   POWER CELL CARD STYLES
+   Premium project card with energy/hardware aesthetics
+   ============================================================================= */
+
+/* Double border effect - outer dark, inner cyan glow */
+.power-cell {
+  position: relative;
+  background: rgba(20, 20, 25, 0.95);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(10, 10, 13, 0.8),
+    0 0 30px rgba(0, 229, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.power-cell:hover {
+  border-color: rgba(0, 229, 255, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(10, 10, 13, 0.8),
+    0 0 50px rgba(0, 229, 255, 0.2), 0 0 80px rgba(139, 92, 246, 0.1);
+}
+
+/* Core energy bar */
+.power-cell-core {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 229, 255, 0.1) 0%,
+    rgba(0, 229, 255, 0.3) var(--charge, 70%),
+    rgba(0, 229, 255, 0.05) 100%
+  );
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.power-cell-core::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--charge, 70%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 229, 255, 0.6),
+    rgba(139, 92, 246, 0.4)
+  );
+  border-radius: 2px;
+  transition: height 0.6s ease-out;
+}
+
+.power-cell:hover .power-cell-core::after {
+  animation: charge-pulse 1.5s ease-in-out infinite;
+}
+
+/* Charging pulse animation */
+@keyframes charge-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.8);
+  }
+}
+
+/* Corner pins/contacts */
+.power-cell-pins {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 4px;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.power-cell:hover .power-cell-pins {
+  opacity: 0.7;
+}
+
+.power-cell-pin {
+  width: 6px;
+  height: 6px;
+  background: rgba(0, 229, 255, 0.5);
+  border-radius: 1px;
+}
+
+.power-cell-pin:nth-child(2) {
+  width: 10px;
+  background: rgba(0, 229, 255, 0.35);
+}
+
+.power-cell-pin:nth-child(3) {
+  width: 4px;
+  height: 4px;
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* Circuit pattern overlay (SVG-based, appears on hover) */
+.power-cell-circuit {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30h20M40 30h20M30 0v20M30 40v20' stroke='%2300e5ff' stroke-width='0.5' fill='none' opacity='0.15'/%3E%3Ccircle cx='30' cy='30' r='2' fill='%2300e5ff' opacity='0.2'/%3E%3C/svg%3E");
+  background-size: 60px 60px;
+}
+
+.power-cell:hover .power-cell-circuit {
+  opacity: 0.4;
+}
+
+/* Preview image treatment - Villex uniformity */
+.power-cell-preview {
+  filter: blur(8px) saturate(0.3) brightness(0.5);
+  transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.power-cell:hover .power-cell-preview {
+  filter: blur(5px) saturate(0.5) brightness(0.6);
+}
+
+/* Chromatic overlay for unified look */
+.power-cell-chromatic {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 229, 255, 0.15) 0%,
+    rgba(139, 92, 246, 0.1) 50%,
+    rgba(255, 0, 255, 0.08) 100%
+  );
+  mix-blend-mode: overlay;
+}
+
+/* Logo glow - Villex cyan dominant */
+.power-cell-logo-glow {
+  filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.6))
+    drop-shadow(0 0 40px rgba(0, 229, 255, 0.3))
+    drop-shadow(0 0 60px rgba(139, 92, 246, 0.2));
+  transition: filter 0.4s ease;
+}
+
+.power-cell:hover .power-cell-logo-glow {
+  filter: drop-shadow(0 0 25px rgba(0, 229, 255, 0.8))
+    drop-shadow(0 0 50px rgba(0, 229, 255, 0.5))
+    drop-shadow(0 0 80px rgba(139, 92, 246, 0.3));
+}
+
+/* Particle effect for charged cards */
+.power-cell-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.power-cell-particles.active {
+  opacity: 1;
+}
+
+/* Individual particles */
+.power-cell-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(0, 229, 255, 0.8);
+  box-shadow: 0 0 6px rgba(0, 229, 255, 0.6);
+  animation: particle-rise 2s ease-out infinite;
+}
+
+.power-cell-particle:nth-child(2) {
+  left: 20%;
+  animation-delay: 0.3s;
+  background: rgba(139, 92, 246, 0.7);
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.5);
+}
+
+.power-cell-particle:nth-child(3) {
+  left: 40%;
+  animation-delay: 0.6s;
+  width: 3px;
+  height: 3px;
+}
+
+.power-cell-particle:nth-child(4) {
+  left: 60%;
+  animation-delay: 0.9s;
+  background: rgba(0, 229, 255, 0.6);
+}
+
+.power-cell-particle:nth-child(5) {
+  left: 80%;
+  animation-delay: 1.2s;
+  background: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.4);
+  width: 3px;
+  height: 3px;
+}
+
+.power-cell-particle:nth-child(6) {
+  left: 90%;
+  animation-delay: 0.15s;
+  width: 2px;
+  height: 2px;
+}
+
+.power-cell-particle:nth-child(7) {
+  left: 10%;
+  animation-delay: 0.75s;
+  width: 2px;
+  height: 2px;
+  background: rgba(255, 0, 255, 0.5);
+}
+
+.power-cell-particle:nth-child(8) {
+  left: 50%;
+  animation-delay: 1.5s;
+  width: 5px;
+  height: 5px;
+}
+
+@keyframes particle-rise {
+  0% {
+    top: 100%;
+    opacity: 0;
+    transform: translateX(0) scale(0.5);
+  }
+  10% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    top: -20px;
+    opacity: 0;
+    transform: translateX(10px) scale(0.3);
+  }
+}
+
+/* Mobile performance fallback - reduce blur */
+@media (max-width: 768px) {
+  .power-cell-preview {
+    filter: blur(4px) saturate(0.4) brightness(0.5);
+  }
+
+  .power-cell.mobile-active .power-cell-preview {
+    filter: blur(3px) saturate(0.5) brightness(0.55);
+  }
+
+  .power-cell-circuit {
+    display: none; /* Hide circuit on mobile for performance */
+  }
+  
+  /* Reduce particle count on mobile */
+  .power-cell-particle:nth-child(n+5) {
+    display: none;
+  }
+}
+
