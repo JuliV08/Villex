@@ -21,8 +21,7 @@ try:
     )
     conn.close()
     exit(0)
-except:
-    exit(1)
+except Exception as e:
     print(f'Error de conexión: {e}')
     exit(1)
 "; do
