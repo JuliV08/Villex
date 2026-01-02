@@ -161,23 +161,25 @@ export async function submitAndRedirect(
 ): Promise<SubmitResult> {
   const result = await submitLead(data)
 
-  // If email confirmation is required, don't redirect anywhere
-  if (result.success && result.requiresEmailConfirmation) {
+  if (!result.success || !result.data) {
     return result
   }
 
-  if (result.success && result.data && !result.requiresEmailConfirmation) {
-    const targetUrl = redirectType === 'whatsapp'
-      ? result.data.whatsapp_url
-      : result.data.thank_you_url
+  // 1. Handle WhatsApp: Always open if URL exists, regardless of email confirmation status
+  if (redirectType === 'whatsapp' && result.data.whatsapp_url) {
+    window.open(result.data.whatsapp_url, '_blank')
+    return result
+  }
 
-    // For thank-you page, navigate in same window
-    // For WhatsApp, open in new tab then stay on page
-    if (redirectType === 'whatsapp' && targetUrl) {
-      window.open(targetUrl, '_blank')
-    } else if (targetUrl) {
-      // Redirect to thank-you page (backend returns full path)
-      window.location.href = targetUrl
+  // 2. Handle Thank You Page: Only if NO email confirmation required
+  if (redirectType === 'thank_you') {
+    if (result.requiresEmailConfirmation) {
+      // Don't redirect, let the UI show "Check your email"
+      return result
+    }
+    
+    if (result.data.thank_you_url) {
+      window.location.href = result.data.thank_you_url
     }
   }
 

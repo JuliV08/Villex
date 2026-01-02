@@ -146,6 +146,13 @@ class LeadCreateView(View):
         # Build response
         lead_token = str(lead.lead_token)
         
+        # Prepare WhatsApp URL (needed for both flows)
+        whatsapp_url = build_whatsapp_url({
+            'name': name,
+            'project_type': project_type,
+            'message': message,
+        })
+        
         # If email contact and not spam, send confirmation email
         if contact_email and not is_spam:
             email_sent = send_confirmation_email(lead)
@@ -162,16 +169,13 @@ class LeadCreateView(View):
                 'requires_email_confirmation': True,
                 'email_sent': email_sent,
                 'message': 'Revisá tu email para confirmar y agendar tu llamada.',
+                'whatsapp_url': whatsapp_url,
             }, status=201)
         
         # Phone contact or spam - return URLs directly (old behavior)
         thank_you_url = build_thank_you_url(lead_token)
         calendly_url = build_calendly_url(lead_token, contact_email, name)
-        whatsapp_url = build_whatsapp_url({
-            'name': name,
-            'project_type': project_type,
-            'message': message,
-        })
+        # whatsapp_url already calculated above
         
         return JsonResponse({
             'success': True,
