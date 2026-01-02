@@ -5,7 +5,7 @@ Anti-spam detection, URL building, email confirmation, etc.
 
 import re
 import hashlib
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -219,7 +219,8 @@ def build_whatsapp_url(lead_data: dict) -> str:
         message=lead_data.get('message', '')[:200],  # Limit message length
     )
     
-    return f"https://wa.me/{phone}?text={urlencode({'': message})[1:]}"
+    encoded_message = quote(message)
+    return f"https://api.whatsapp.com/send?phone={phone}&text={encoded_message}"
 
 
 def build_thank_you_url(lead_token: str) -> str:
