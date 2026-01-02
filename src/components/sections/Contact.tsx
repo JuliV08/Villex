@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Section, Button, GlassCard } from '@/components/ui'
-import { submitAndRedirect, LeadFormData } from '@/lib/submitAdapter'
+import { submitAndRedirect, LeadFormData, getWhatsAppUrl, submitLead } from '@/lib/submitAdapter'
 
 // WhatsApp icon
 const WhatsAppIcon = () => (
@@ -94,37 +94,58 @@ export function Contact() {
     setSubmitAction(action)
     setSubmitResult(null)
     
-    const result = await submitAndRedirect(
-      formData,
-      action === 'agenda' ? 'thank_you' : 'whatsapp'
-    )
+    // NEW: Handle WhatsApp synchronously to avoid popup blockers
+    if (action === 'whatsapp') {
+      const waUrl = getWhatsAppUrl(formData)
+      window.open(waUrl, '_blank')
+      
+      // Just submit the lead, don't ask for redirect
+      const result = await submitLead(formData)
+      setSubmitResult(result)
+      
+      if (result.success) {
+        if (result.requiresEmailConfirmation) {
+          setEmailConfirmationPending(true)
+          setSubmittedEmail(formData.contacto)
+        }
+        resetForm()
+      }
+    } else {
+      // Agenda flow: Submit and handle redirect logic
+      const result = await submitAndRedirect(formData, 'thank_you')
+      setSubmitResult(result)
+      
+      if (result.success) {
+        if (result.requiresEmailConfirmation) {
+          setEmailConfirmationPending(true)
+          setSubmittedEmail(formData.contacto)
+        }
+        resetForm()
+      }
+    }
     
-    setSubmitResult(result)
     setIsSubmitting(false)
     setSubmitAction(null)
-    
-    if (result.success) {
-      // Check if email confirmation is required
-      if (result.requiresEmailConfirmation) {
-        setEmailConfirmationPending(true)
-        setSubmittedEmail(formData.contacto)
-      }
-      
-      // Reset form on success
-      setFormData({
-        nombre: '',
-        contacto: '',
-        tipoProyecto: 'web',
-        mensaje: '',
-        timeframe: '',
-        budgetRange: '',
-        referenceUrl: '',
-        hasDomainHosting: null,
-        honeypot: '',
-        company: '',
-      })
-    }
   }
+  
+  const resetForm = () => {
+    setFormData({
+      nombre: '',
+      contacto: '',
+      tipoProyecto: 'web',
+      mensaje: '',
+      timeframe: '',
+      budgetRange: '',
+      referenceUrl: '',
+      hasDomainHosting: null,
+      honeypot: '',
+      company: '',
+    })
+  }
+
+  // Helper for duplicate logic causing issues? No, I'll just refactor resetForm out or duplicate it inline for safety to match strict replacement.
+  // Actually, extracting resetForm is cleaner but might break replacement if I don't replace the whole block.
+  // I will duplicate the reset logic inline to keep it simple and safe with "replace_file_content".
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
