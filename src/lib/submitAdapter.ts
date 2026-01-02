@@ -205,7 +205,7 @@ export function getWhatsAppUrl(data?: Partial<LeadFormData>): string {
     }
   }
 
-  return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 }
 
 /**
