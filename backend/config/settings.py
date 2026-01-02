@@ -188,3 +188,19 @@ EMAIL_CONFIRM_EXPIRY_HOURS = 24
 
 # Frontend URL for email links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://villex.com.ar')
+
+
+# =============================================================================
+# CORS Configuration
+# =============================================================================
+CORS_ALLOWED_ORIGINS = os.getenv(
+    'CORS_ALLOWED_ORIGINS',
+    'https://villex.com.ar,https://www.villex.com.ar'
+).split(',')
+
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://villex.com.ar,https://www.villex.com.ar'
+).split(',')
+

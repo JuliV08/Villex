@@ -281,5 +281,13 @@ def send_confirmation_email(lead) -> bool:
         
         return True
     except Exception as e:
-        print(f"Error sending email: {e}")
+        # Log detailed error information
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(
+            f"Failed to send confirmation email to {lead.contact_email}. "
+            f"Lead ID: {lead.id}, Error: {str(e)}",
+            exc_info=True
+        )
         return False
+
