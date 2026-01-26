@@ -89,7 +89,9 @@ services:
       - static_files:/usr/share/nginx/static:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       # Frontend Application (SPA)
-      - villex_frontend_build:/usr/share/nginx/html:ro
+      # - villex_frontend_build:/usr/share/nginx/html:ro
+      # COMMENTED OUT: Volume mount was overwriting Dockerfile's COPY --from=builder
+      # Frontend files are now directly copied into image during build
       # DyM Cosmeticos volumes (external Docker volumes for real-time updates)
       - dym-cosmeticos_static_volume:/opt/dym-cosmeticos/staticfiles:ro
       - dym-cosmeticos_media_volume:/opt/dym-cosmeticos/media:ro
@@ -108,8 +110,10 @@ volumes:
     external: true
   dym-cosmeticos_media_volume:
     external: true
-  villex_frontend_build:
-    external: true
+  # villex_frontend_build:
+  #   external: true
+  # COMMENTED OUT: No longer using external volume for frontend build
+  # Frontend is now managed entirely by nginx container's built-in dist files
 
 # =================================================
 # Network
