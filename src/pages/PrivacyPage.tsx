@@ -46,7 +46,7 @@ function PrivacyPage() {
                 <h2 className="text-2xl font-bold text-white mb-4">4. Tus Derechos</h2>
                 <p className="text-dark-300 leading-relaxed">
                   Tenés derecho a acceder, rectificar o eliminar tus datos en cualquier momento. Para ejercer estos
-                  derechos, contactanos a: <a href="mailto:julian@villex.com.ar" className="text-primary-400 hover:underline">julian@villex.com.ar</a>
+                  derechos, contactanos a: <a href="mailto:villellijulian@gmail.com" className="text-primary-400 hover:underline">villellijulian@gmail.com</a>
                 </p>
               </section>
 
@@ -62,7 +62,7 @@ function PrivacyPage() {
                 <h2 className="text-2xl font-bold text-white mb-4">6. Contacto</h2>
                 <p className="text-dark-300 leading-relaxed">
                   Si tenés alguna pregunta sobre nuestra política de privacidad, escribinos a{' '}
-                  <a href="mailto:julian@villex.com.ar" className="text-primary-400 hover:underline">julian@villex.com.ar</a>
+                  <a href="mailto:villellijulian@gmail.com" className="text-primary-400 hover:underline">villellijulian@gmail.com</a>
                 </p>
                 <p className="text-dark-300 mt-4">
                   <strong className="text-white">Villex</strong><br />
