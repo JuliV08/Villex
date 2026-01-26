@@ -1,0 +1,15 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Block sensitive directories
+Disallow: /admin/
+Disallow: /api/
+Disallow: /static/admin/
+Disallow: /media/
+
+# Host
+Host: https://villex.com.ar
+
+# Sitemap
+Sitemap: https://villex.com.ar/sitemap.xml
